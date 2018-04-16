@@ -1,0 +1,77 @@
+﻿<script type='text/javascript' src='http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js'></script>
+<div class="row">
+
+    <div class="col-md-6">
+        <input type="file" name="client-file" id="get-files" multiple />
+        <br /><br />
+        <input id="postUploadMultiple" type="button" value="Post Multiple Upload" />
+
+        <br /><br />
+        <input id="fileUpload" type="file" name="files" />
+        <br />
+        <input id="postUpload" type="button" value="Post Upload" />
+        <br /><br />
+    </div>
+
+    <div class="col-md-6" style="background-color: #eee; height:100vh; padding-top:0px;">
+        <input id="getUploaded" type="button" value="Get Uploaded" />
+        <div id="imageContainer">
+        </div>
+
+    </div>
+</div>  
+
+<script>
+    $(document).ready(function () {
+        $('#getUploaded').on('click', function () {
+            var ajaxRequest = $.ajax({
+                type: "GET",
+                url: "http://webupload.com:8084/api/FileUploads",
+                success: function (data) {
+                    console.log("success");
+                    console.log(data);
+                    var imgs = "";
+                    for (var i = 0; i < data.length; i++) {
+                        var src = "data:image/jpeg;base64,";
+                        src += data[i].imagedata;
+                        var newImage = document.createElement('img');
+                        newImage.src = src;
+                        newImage.width = newImage.height = "80";
+                        imgs += newImage.outerHTML;
+                    }
+                    document.querySelector('#imageContainer').innerHTML = imgs;
+                },
+            });
+        });
+        $('#postUpload').on('click', function () {
+            var data = new FormData()
+            var files = $("#fileUpload").get(0).files;
+            if (files.length > 0) {
+                data.append("uploadedfile", files[0]);
+            }
+            var ajaxRequest = $.ajax({
+                type: "POST",
+                url: "http://webupload.com:8084/api/FileUploads",
+                data: data,
+                success: function (data) {
+                    console.log("success");
+                    console.log(data);
+                },
+            });
+            ajaxRequest.done(function (xhr, textStatus, data) {
+                console.log(data);
+            });
+        });
+        $('#postUploadMultiple').on('click', function () {
+            var inp = document.getElementById("get-files");
+            // Access and handle the files 
+
+            for (i = 0; i < inp.files.length; i++) {
+                let file = inp.files[i];
+                console.log(file);
+                // do things with file
+            }            
+        });
+    }); 
+
+</script>

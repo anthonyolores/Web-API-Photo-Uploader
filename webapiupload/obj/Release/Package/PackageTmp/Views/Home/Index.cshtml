@@ -1,0 +1,31 @@
+﻿<script type='text/javascript' src='http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js'></script>
+<div>
+        <input id="fileUpload" type="file" name="files" />
+        <br />
+        <br />
+        <input id="btn5.0.4" type="button" value="Upload Now"/>
+</div>  
+
+<script>
+    $(document).ready(function () {
+        $('#btn5.0.4').on('click', function () {
+            var data = new FormData()
+            var files = $("#fileUpload").get(0).files;
+            if (files.length > 0) {
+                data.append("uploadedfile", files[0]);
+            }
+            var ajaxRequest = $.ajax({
+                type: "POST",
+                url: "http://localhost:58227/api/FileUploads",
+                data: data,
+                success: function (data) {
+                    console.log("success");
+                    console.log(data);
+                },
+            });
+            ajaxRequest.done(function (xhr, textStatus, data) {
+                console.log(data);
+            });
+        });
+    }); 
+</script>
