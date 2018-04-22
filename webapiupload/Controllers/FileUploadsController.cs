@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Threading.Tasks;
 using System.Web;
 using System.Web.Http;
 using System.Web.Http.Description;
@@ -76,26 +77,35 @@ namespace webapiupload.Controllers
         // POST: api/FileUploads
         [ResponseType(typeof(FileUpload))]
         [HttpPost]
-        public IHttpActionResult PostFileUpload()
+        public async Task<IHttpActionResult> PostFileUpload()
         {
             if (HttpContext.Current.Request.Files.AllKeys.Any())
             {
-                var httpPostedFile = HttpContext.Current.Request.Files["uploadedfile"];
+
+
+                //Do whatever you want with filename and its binaray data.
+                var httpPostedFile = HttpContext.Current.Request.Files;
+
                 if (httpPostedFile != null)
                 {
-                    FileUpload imgupload = new FileUpload();
-                    int length = httpPostedFile.ContentLength;
-                    imgupload.imagedata = new byte[length];
-                    httpPostedFile.InputStream.Read(imgupload.imagedata, 0, length);
-                    imgupload.imagename = Path.GetFileName(httpPostedFile.FileName);
-                    db.fileUpload.Add(imgupload);
-                    db.SaveChanges();
-                    var fileSavePath = Path.Combine(HttpContext.Current.Server.MapPath("~/UploadedFiles"), httpPostedFile.FileName);
-                    httpPostedFile.SaveAs(fileSavePath);
+                    for(int i = 0; i < httpPostedFile.Count; i++)
+                    {
+                        FileUpload imgupload = new FileUpload();
+                        string keyName = "file" + i.ToString();
+                        int length = httpPostedFile[keyName].ContentLength;
+                        imgupload.imagedata = new byte[length];
+                        httpPostedFile[keyName].InputStream.Read(imgupload.imagedata, 0, length);
+                        imgupload.imagename = Path.GetFileName(httpPostedFile[keyName].FileName);
+                        db.fileUpload.Add(imgupload);
+                        db.SaveChanges();
+                        var fileSavePath = Path.Combine(HttpContext.Current.Server.MapPath("~/UploadedFiles"), httpPostedFile[keyName].FileName);
+                        httpPostedFile[keyName].SaveAs(fileSavePath);
+                       
+                    }
                     return Ok("Image Uploaded");
                 }
             }
-            return Ok("Image is not Uploaded");
+            return Ok();
         }
 
         // DELETE: api/FileUploads/5

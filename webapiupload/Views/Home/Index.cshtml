@@ -1,39 +1,35 @@
-﻿<script type='text/javascript' src='http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js'></script>
+﻿@*<script src="https://code.jquery.com/jquery-1.12.4.js"></script>*@
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
 <div class="row">
 
-    <div class="col-md-6">
+    <div class="col-md-6" style="padding:0px 0px;">
         <input type="file" name="client-file" id="get-files" multiple />
         <br /><br />
         <div class="fileItems-container">
-            <ul id="fileItems-ul" style="list-style:none; padding:0px;"></ul>
+            <div id="fileItems-ul" style="padding:0px;"></div>
         </div>
-
-        <br /><br />
-        <input id="fileUpload" type="file" name="files" />
-        <br />
-        <input id="postUpload" type="button" value="Post Upload" />
-        <br /><br />
     </div>
 
-    <div class="col-md-6" style="padding-top:0px;">
-        <div class="row" style="height:300px; position:relative; background-color: #fefefe; border: 1px solid #eee; max-height:300px; overflow-y: auto;"
-             ondrop="drop(event)" ondragover="allowDrop(event)">
+    <div class="col-md-6" style="padding:0px 0px;">
+        <div class="row"><input id="postUpload" type="button" value="Post Upload" /></div>
+        <div class="row" style="height:300px; position:relative; background-color: #fefefe; border: 1px solid #eee; max-height:300px; overflow-y: auto;  z-index:-1;"
+             id="upload-area">
             <div style="position:absolute; width:100%; color: #ddd; top:45%; text-align:center; font-size: 1.3em;">Drag files here to Upload </div>
-            <ul style="list-style:none; padding:0px;" id="dropped-fles">
-
-            </ul>
+            <div style="padding:0px;" id="dropped-fles"></div>
         </div>
-        <div class="row" style="height:300px; background-color: #eee; overflow-y:auto; margin-top:15px;">
-            <input id="getUploaded" type="button" value="Get Uploaded" />
+        <div class="row"><input id="getUploaded" type="button" value="Get Uploaded" /></div>
+        <div class="row" style="height:300px; background-color: #eee; overflow-y:auto;">        
             <div id="imageContainer">
             </div>
         </div>
-
     </div>
-</div>  
+</div>
 
 <script>
+
+    //get uploaded files
     $(document).ready(function () {
+        var filesToUpload = [];
         $('#getUploaded').on('click', function () {
             var ajaxRequest = $.ajax({
                 type: "GET",
@@ -54,56 +50,78 @@
                 },
             });
         });
+
+        //upload dropped files
         $('#postUpload').on('click', function () {
-            var data = new FormData()
-            var files = $("#fileUpload").get(0).files;
-            if (files.length > 0) {
-                data.append("uploadedfile", files[0]);
-            }
-            var ajaxRequest = $.ajax({
-                type: "POST",
-                url: "http://webupload.com:8084/api/FileUploads",
-                data: data,
-                success: function (data) {
-                    console.log("success");
+
+            if (filesToUpload.length > 0) {
+                var data = new FormData()
+                var files = $("#get-files").get(0).files;
+
+                for (let i = 0; i < filesToUpload.length; i++) {
+                    data.append("file" + i, files[parseInt(filesToUpload[i])]);
+                }
+                //add files to be uploaded in data parameter
+                //for (var x = 0; x < files.length; x++) {
+                //    data.append("file" + x, files[x]);
+                //}
+
+                //send post request to web api
+                var ajaxRequest = $.ajax({
+                    type: "POST",
+                    url: "http://webupload.com:8084/api/FileUploads",
+                    data: data,
+                    contentType: "application/json",
+                    contentType: false,
+                    processData: false
+                });
+                ajaxRequest.done(function (xhr, textStatus, data) {
                     console.log(data);
-                },
-            });
-            ajaxRequest.done(function (xhr, textStatus, data) {
-                console.log(data);
-            });
+                });
+
+                filesToUpload = [];
+            }
+
         });
         $('#get-files').on('change', function () {
             var inp = document.getElementById("get-files");
-            // Access and handle the files 
-
+            $('#fileItems-ul').text("");
+            //display list files to upload
             for (i = 0; i < inp.files.length; i++) {
                 let file = inp.files[i];
                 $('#fileItems-ul')
-                    .append('<li id="li' + i 
-                    + '" style="margin:5px; display:inline-block; background-color: #eee; height:100px; width:120px;word-wrap: break-word; font-size:0.8em;  draggable="true" ondragstart="drag(event)""><span style="user-select:none;">'
+                    .append('<div class="file2Upload" id="li' + i
+                    + '" style="margin:5px; display:inline-block; background-color: #eee; height:100px; width:120px;word-wrap: break-word; font-size:0.8em;"><span style="user-select:none;">'
                     + file.name
                     + '<br/>('
                     + file.size + ')'
-                    + '</span></li>');
+                    + '</span></div>');
                 console.log(file);
-            }            
+            }
+            //dry file to be draggable
+            $(function () {
+                $('.file2Upload').draggable({
+                    cursor: 'move',
+                    helper: "clone",
+                    snap: "#upload-area"
+                });
+                //once dropped, add file to list 
+                $("#upload-area").droppable({
+                    drop: function (event, ui) {
+                        var itemid = ui.helper.context.id;
+                        filesToUpload.push(itemid.replace("li",""));
+                        $('.file2Upload').each(function () {
+                            if ($(this).attr("id") === itemid) {
+                                $(this).appendTo("#upload-area");
+                            }
+                        });
+                    }
+                });
+            });
+
         });
-    }); 
+    });
 
-    function allowDrop(ev) {
-        ev.preventDefault();
-    }
 
-    function drag(ev) {
-        ev.dataTransfer.setData("text", ev.target.id);
-    }
-
-    function drop(ev) {
-        ev.preventDefault();
-        var data = ev.dataTransfer.getData("text");
-        $("#dropped-fles").append(document.getElementById(data));
-        //ev.target.appendChild();
-    }
 
 </script>
